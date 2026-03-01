@@ -1,0 +1,10 @@
+name = "review-widget"
+handle = "review-widget"
+type = "theme"
+uid = "35b372b8-e5d7-81eb-c3d7-dea12634b8c97c864dfc"
+
+[settings]
+  [[settings.fields]]
+  key = "app_url"
+  type = "text"
+  label = "App URL"

@@ -1,0 +1,240 @@
+{% if customer %}
+<div id="review-app-wrap" style="margin: 40px 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+  
+  <h3 style="font-size: 20px; font-weight: 700; margin: 0 0 16px; color: #202223;">Customer Reviews</h3>
+  <div id="rv-list-logged"></div>
+
+  <div style="background:#f9fafb; border:1px solid #e1e3e5; border-radius:12px; padding:24px; margin-top:24px;">
+    <h4 style="margin:0 0 20px; font-size:16px; font-weight:600;">✍️ Write a Review for - {{product.title}}</h4>
+
+    <div id="rv-success" style="display:none; background:#d1e7dd; color:#0f5132; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-weight:500;"></div>
+    <div id="rv-error" style="display:none; background:#f8d7da; color:#842029; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-weight:500;"></div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <div>
+        <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">First Name *</label>
+        <input id="rv-fname" type="text" value="{{ customer.first_name }}"
+          style="width:100%; padding:10px 12px; border:1px solid #c9cccf; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+      </div>
+      <div>
+        <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Last Name *</label>
+        <input id="rv-lname" type="text" value="{{ customer.last_name }}"
+          style="width:100%; padding:10px 12px; border:1px solid #c9cccf; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Email *</label>
+      <input id="rv-email" type="email" value="{{ customer.email }}" readonly
+        style="width:100%; padding:10px 12px; border:1px solid #c9cccf; border-radius:8px; font-size:14px; box-sizing:border-box; background:#f1f2f3; color:#6d7175;" />
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="font-size:13px; font-weight:600; display:block; margin-bottom:8px;">Rating *</label>
+      <div id="rv-stars" style="display:flex; gap:8px;">
+        <span data-val="1" style="font-size:36px; cursor:pointer; color:#e0e0e0;" onclick="rvSelectStar(1)" onmouseover="rvHover(1)" onmouseout="rvReset()">★</span>
+        <span data-val="2" style="font-size:36px; cursor:pointer; color:#e0e0e0;" onclick="rvSelectStar(2)" onmouseover="rvHover(2)" onmouseout="rvReset()">★</span>
+        <span data-val="3" style="font-size:36px; cursor:pointer; color:#e0e0e0;" onclick="rvSelectStar(3)" onmouseover="rvHover(3)" onmouseout="rvReset()">★</span>
+        <span data-val="4" style="font-size:36px; cursor:pointer; color:#e0e0e0;" onclick="rvSelectStar(4)" onmouseover="rvHover(4)" onmouseout="rvReset()">★</span>
+        <span data-val="5" style="font-size:36px; cursor:pointer; color:#e0e0e0;" onclick="rvSelectStar(5)" onmouseover="rvHover(5)" onmouseout="rvReset()">★</span>
+      </div>
+      <input type="hidden" id="rv-rating" value="0" />
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Review Comment *</label>
+      <textarea id="rv-comment" placeholder="Share your experience..."
+        style="width:100%; padding:10px 12px; border:1px solid #c9cccf; border-radius:8px; font-size:14px; box-sizing:border-box; height:100px; resize:vertical; font-family:inherit;"></textarea>
+    </div>
+
+    <button id="rv-btn" onclick="rvSubmit()"
+      style="background:#008060; color:white; border:none; padding:12px 28px; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; width:100%;">
+      Submit Review
+    </button>
+  </div>
+</div>
+
+{% else %}
+<div style="margin:40px 0; font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
+  <h3 style="font-size:20px; font-weight:700; margin:0 0 16px;">Customer Reviews</h3>
+  <div id="rv-list-guest"></div>
+  <div style="background:#f9fafb; border:1px solid #e1e3e5; border-radius:12px; padding:24px; text-align:center; margin-top:24px;">
+    <p style="font-size:15px; color:#202223; margin:0 0 16px;">🔒 Review likhne ke liye <strong>login karna zaroori hai</strong></p>
+    <a href="{{ routes.account_login_url }}" style="background:#008060; color:white; padding:10px 24px; border-radius:8px; text-decoration:none; font-weight:600; font-size:14px;">Login Karo</a>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  // ─── Global Variables ───
+  var APP_URL = '{{ block.settings.app_url }}';
+  var PRODUCT_ID = '{{ product.id }}';
+  var SHOP = '{{ shop.permanent_domain }}';
+  var rvSelected = 0;
+
+  // ─── Star Functions (Global) ───
+  function rvHover(val) {
+    document.querySelectorAll('#rv-stars span').forEach(function(s, i) {
+      s.style.color = i < val ? '#FFC107' : '#e0e0e0';
+    });
+  }
+
+  function rvReset() {
+    document.querySelectorAll('#rv-stars span').forEach(function(s, i) {
+      s.style.color = i < rvSelected ? '#FFC107' : '#e0e0e0';
+    });
+  }
+
+  function rvSelectStar(val) {
+    rvSelected = val;
+    var ratingInput = document.getElementById('rv-rating');
+    if (ratingInput) ratingInput.value = val;
+    rvReset();
+  }
+
+  // ─── Render Reviews ───
+  function renderReviews(reviews, containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = '<p style="color:#6d7175; font-style:italic;">There are currently no approved reviews.</p>';
+      return;
+    }
+
+    var avg = (reviews.reduce(function(s, r) { return s + r.rating; }, 0) / reviews.length).toFixed(1);
+    var avgRound = Math.round(avg);
+    var starsHTML = '';
+    for (var x = 0; x < avgRound; x++) starsHTML += '★';
+    for (var y = avgRound; y < 5; y++) starsHTML += '☆';
+
+    var html = '<div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding:16px; background:#fffbf0; border-radius:8px; border:1px solid #ffe082;">';
+    html += '<span style="font-size:36px; font-weight:bold; color:#f59e0b;">' + avg + '</span>';
+    html += '<div><div style="color:#FFC107; font-size:24px;">' + starsHTML + '</div>';
+    html += '<div style="font-size:13px; color:#6d7175;">' + reviews.length + ' review(s)</div></div></div>';
+
+    reviews.forEach(function(r) {
+      var rStars = '';
+      for (var a = 0; a < r.rating; a++) rStars += '★';
+      for (var b = r.rating; b < 5; b++) rStars += '☆';
+      html += '<div style="border:1px solid #e1e3e5; border-radius:10px; padding:18px; margin-bottom:12px; background:white;">';
+      html += '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">';
+      html += '<div><strong style="font-size:15px;">' + r.firstName + ' ' + r.lastName + '</strong>';
+      html += '<div style="font-size:13px; color:#6d7175;">' + new Date(r.createdAt).toLocaleDateString('en-IN', {year:'numeric', month:'long', day:'numeric'}) + '</div></div>';
+      html += '<div style="color:#FFC107; font-size:20px;">' + rStars + '</div></div>';
+      html += '<p style="margin:0; font-size:14px; color:#444; line-height:1.6;">' + r.comment + '</p></div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  // ─── Load Reviews ───
+  function loadReviews(containerId) {
+    if (!PRODUCT_ID || PRODUCT_ID === '') return;
+    fetch(APP_URL + '/api/reviews/' + PRODUCT_ID + '?shop=' + SHOP)
+      .then(function(res) { return res.json(); })
+      .then(function(data) { renderReviews(data.reviews, containerId); })
+      .catch(function() {
+        var c = document.getElementById(containerId);
+        if (c) c.innerHTML = '<p style="color:#6d7175;">Reviews load nahi ho sake.</p>';
+      });
+  }
+
+  // ─── Submit Review ───
+  function rvSubmit() {
+    var firstName = document.getElementById('rv-fname').value.trim();
+    var lastName = document.getElementById('rv-lname').value.trim();
+    var email = document.getElementById('rv-email').value.trim();
+    var rating = Number(document.getElementById('rv-rating').value);
+    var comment = document.getElementById('rv-comment').value.trim();
+    var successEl = document.getElementById('rv-success');
+    var errorEl = document.getElementById('rv-error');
+    var btn = document.getElementById('rv-btn');
+
+    successEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    if (!firstName || !lastName) {
+      errorEl.textContent = '❌ First aur Last name required hai!';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (rating === 0) {
+      errorEl.textContent = '❌ Rating select karo!';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (!comment) {
+      errorEl.textContent = '❌ Comment likhna zaroori hai!';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    fetch(APP_URL + '/api/reviews/' + PRODUCT_ID, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shop: SHOP,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        rating: rating,
+        comment: comment
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        successEl.textContent = '✅ ' + data.message;
+        successEl.style.display = 'block';
+        document.getElementById('rv-comment').value = '';
+        document.getElementById('rv-rating').value = '0';
+        rvSelected = 0;
+        rvReset();
+        btn.textContent = '✅ Submitted!';
+      } else {
+        errorEl.textContent = '❌ ' + (data.error || 'Kuch galat hua.');
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Submit Review';
+      }
+    })
+    .catch(function() {
+      errorEl.textContent = '❌ Network error. Internet check karo.';
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Submit Review';
+    });
+  }
+
+  // ─── Page Load ───
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!APP_URL || APP_URL === '') {
+      console.error('App URL set nahi hai!');
+      return;
+    }
+    {% if customer %}
+      loadReviews('rv-list-logged');
+    {% else %}
+      loadReviews('rv-list-guest');
+    {% endif %}
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Review Widget",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "app_url",
+      "label": "App URL",
+      "info": "https://safe-implies-preferred-excess.trycloudflare.com"
+    }
+  ]
+}
+{% endschema %}
