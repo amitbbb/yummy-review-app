@@ -13,6 +13,23 @@ export default async function handleRequest(
   responseHeaders,
   reactRouterContext,
 ) {
+  const url = new URL(request.url);
+  if (request.method === "OPTIONS" && url.pathname.startsWith("/api/reviews/")) {
+    const origin = request.headers.get("Origin") ?? "*";
+    const requestHeaders =
+      request.headers.get("Access-Control-Request-Headers") ?? "Content-Type";
+
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": requestHeaders,
+        Vary: "Origin, Access-Control-Request-Headers",
+      },
+    });
+  }
+
   addDocumentResponseHeaders(request, responseHeaders);
   const userAgent = request.headers.get("user-agent");
   const callbackName = isbot(userAgent ?? "") ? "onAllReady" : "onShellReady";

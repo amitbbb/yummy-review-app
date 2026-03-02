@@ -1,6 +1,19 @@
 import { data } from "react-router";
 import db from "../db.server";
 
+function corsHeaders(request) {
+  const origin = request.headers.get("Origin") ?? "*";
+  const requestHeaders =
+    request.headers.get("Access-Control-Request-Headers") ?? "Content-Type";
+
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": requestHeaders,
+    Vary: "Origin, Access-Control-Request-Headers",
+  };
+}
+
 // GET - Sirf approved reviews fetch karo
 export const loader = async ({ request, params }) => {
   const productId = params.productId;
@@ -22,27 +35,13 @@ export const loader = async ({ request, params }) => {
   return data(
     { reviews },
     {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
+      headers: corsHeaders(request),
     }
   );
 };
 
 // POST - Customer ka naya review save karo (pending status mein)
 export const action = async ({ request, params }) => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
-  }
-
   const productId = params.productId;
   const body = await request.json();
   const { shop, firstName, lastName, email, rating, comment } = body;
@@ -53,7 +52,7 @@ export const action = async ({ request, params }) => {
       { error: "Saari fields required hain!" },
       {
         status: 400,
-        headers: { "Access-Control-Allow-Origin": "*" },
+        headers: corsHeaders(request),
       }
     );
   }
@@ -68,7 +67,7 @@ export const action = async ({ request, params }) => {
       { error: "Aap pehle hi is product ka review de chuke hain!" },
       {
         status: 400,
-        headers: { "Access-Control-Allow-Origin": "*" },
+        headers: corsHeaders(request),
       }
     );
   }
@@ -88,6 +87,6 @@ export const action = async ({ request, params }) => {
 
   return data(
     { success: true, message: "Review submitted! Will appear after admin approval." },
-    { headers: { "Access-Control-Allow-Origin": "*" } }
+    { headers: corsHeaders(request) }
   );
 };
