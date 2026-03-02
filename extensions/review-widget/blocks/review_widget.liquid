@@ -196,14 +196,14 @@
         rvReset();
         btn.textContent = '✅ Submitted!';
       } else {
-        errorEl.textContent = '❌ ' + (data.error || 'Kuch galat hua.');
+        errorEl.textContent = '❌ ' + (data.error || 'Something wrong');
         errorEl.style.display = 'block';
         btn.disabled = false;
         btn.textContent = 'Submit Review';
       }
     })
     .catch(function() {
-      errorEl.textContent = '❌ Network error. Internet check karo.';
+      errorEl.textContent = '❌ Check Internet.';
       errorEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Submit Review';

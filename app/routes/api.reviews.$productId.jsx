@@ -1,23 +1,21 @@
-import { data } from "react-router";
 import db from "../db.server";
 
-function corsHeaders(request) {
-  const origin = request.headers.get("Origin") ?? "*";
-  const requestHeaders =
-    request.headers.get("Access-Control-Request-Headers") ?? "Content-Type";
+const corsHeaders = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Max-Age": "86400",
+};
 
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": requestHeaders,
-    Vary: "Origin, Access-Control-Request-Headers",
-  };
-}
-
-// GET - Sirf approved reviews fetch karo
 export const loader = async ({ request, params }) => {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
   const productId = params.productId;
-  const shop = new URL(request.url).searchParams.get("shop");
+  const url = new URL(request.url);
+  const shop = url.searchParams.get("shop");
 
   const reviews = await db.review.findMany({
     where: { productId, shop, status: "approved" },
@@ -32,61 +30,65 @@ export const loader = async ({ request, params }) => {
     },
   });
 
-  return data(
-    { reviews },
-    {
-      headers: corsHeaders(request),
-    }
-  );
+  return new Response(JSON.stringify({ reviews }), {
+    status: 200,
+    headers: corsHeaders,
+  });
 };
 
-// POST - Customer ka naya review save karo (pending status mein)
 export const action = async ({ request, params }) => {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
   const productId = params.productId;
-  const body = await request.json();
-  const { shop, firstName, lastName, email, rating, comment } = body;
 
-  // Validation
-  if (!firstName || !lastName || !email || !rating || !comment) {
-    return data(
-      { error: "Saari fields required hain!" },
-      {
-        status: 400,
-        headers: corsHeaders(request),
-      }
+  try {
+    const body = await request.json();
+    const { shop, firstName, lastName, email, rating, comment } = body;
+
+    if (!firstName || !lastName || !email || !rating || !comment || !shop) {
+      return new Response(
+        JSON.stringify({ error: "Saari fields required hain!" }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const existing = await db.review.findFirst({
+      where: { productId, shop, email },
+    });
+
+    if (existing) {
+      return new Response(
+        JSON.stringify({ error: "Aap pehle hi is product ka review de chuke hain!" }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    await db.review.create({
+      data: {
+        shop,
+        productId,
+        firstName,
+        lastName,
+        email,
+        rating: Number(rating),
+        comment,
+        status: "pending",
+      },
+    });
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Review submit ho gayi! Admin approval ke baad dikhegi.",
+      }),
+      { status: 200, headers: corsHeaders }
+    );
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Server error: " + err.message }),
+      { status: 500, headers: corsHeaders }
     );
   }
-
-  // Email already reviewed check karo
-  const existing = await db.review.findFirst({
-    where: { productId, shop, email },
-  });
-
-  if (existing) {
-    return data(
-      { error: "Aap pehle hi is product ka review de chuke hain!" },
-      {
-        status: 400,
-        headers: corsHeaders(request),
-      }
-    );
-  }
-
-  await db.review.create({
-    data: {
-      shop,
-      productId,
-      firstName,
-      lastName,
-      email,
-      rating: Number(rating),
-      comment,
-      status: "pending",
-    },
-  });
-
-  return data(
-    { success: true, message: "Review submitted! Will appear after admin approval." },
-    { headers: corsHeaders(request) }
-  );
 };
