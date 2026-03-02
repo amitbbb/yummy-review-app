@@ -19,14 +19,14 @@ export const action = async ({ request }) => {
 };
 
 export default function Auth() {
-  const loaderData = useLoaderData();
-  const actionData = useActionData();
-  const [shop, setShop] = useState("");
-  const { errors } = actionData || loaderData;
+  // const loaderData = useLoaderData();
+  // const actionData = useActionData();
+  // const [shop, setShop] = useState("");
+  // const { errors } = actionData || loaderData;
 
   return (
     <AppProvider embedded={false}>
-      <s-page>
+      {/* <s-page>
         <Form method="post">
           <s-section heading="Log in">
             <s-text-field
@@ -42,6 +42,8 @@ export default function Auth() {
           </s-section>
         </Form>
       </s-page>
-    </AppProvider>
+      */}
+       <s-link href="/app/reviews">Reviews</s-link>
+    </AppProvider> 
   );
 }
