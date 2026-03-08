@@ -81,7 +81,7 @@ export const action = async ({ request, params }) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Review submit ho gayi! Admin approval ke baad dikhegi.",
+        message: "Review submitted! Will appear after admin approval.",
       }),
       { status: 200, headers: corsHeaders }
     );
