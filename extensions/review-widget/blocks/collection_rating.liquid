@@ -1,0 +1,65 @@
+{% comment %} Collection Page Star Rating Widget {% endcomment %}
+
+<div 
+  id="rv-collection-{{ product.id }}" 
+  style="margin: 6px 0; font-size: 14px; min-height: 22px;"
+>
+  <span style="color: #ccc;">Loading...</span>
+</div>
+
+<script>
+(function() {
+  var APP_URL = '{{ block.settings.app_url }}';
+  var PRODUCT_ID = '{{ product.id }}';
+  var SHOP = '{{ shop.permanent_domain }}';
+  var containerId = 'rv-collection-' + PRODUCT_ID;
+
+  if (!APP_URL || !PRODUCT_ID) return;
+
+  fetch(APP_URL + '/api/rating/' + PRODUCT_ID + '?shop=' + SHOP)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+
+      if (data.count === 0) {
+        container.innerHTML = '<span style="color:#999; font-size:13px;">No reviews yet</span>';
+        return;
+      }
+
+      var avg = data.average;
+      var count = data.count;
+      var fullStars = Math.floor(avg);
+      var halfStar = avg - fullStars >= 0.5;
+      var emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+      var starsHTML = '';
+      for (var i = 0; i < fullStars; i++) starsHTML += '<span style="color:#FFC107;">★</span>';
+      if (halfStar) starsHTML += '<span style="color:#FFC107;">½</span>';
+      for (var j = 0; j < emptyStars; j++) starsHTML += '<span style="color:#e0e0e0;">★</span>';
+
+      container.innerHTML = 
+        '<span style="font-size:15px;">' + starsHTML + '</span>' +
+        '<span style="color:#666; font-size:12px; margin-left:4px;">(' + avg + ') ' + count + ' review' + (count > 1 ? 's' : '') + '</span>';
+    })
+    .catch(function() {
+      var container = document.getElementById(containerId);
+      if (container) container.innerHTML = '';
+    });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Collection Rating",
+  "target": "card",
+  "settings": [
+    {
+      "type": "text",
+      "id": "app_url",
+      "label": "App URL",
+      "info": "Tumhara Railway app URL"
+    }
+  ]
+}
+{% endschema %}
